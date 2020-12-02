@@ -3,10 +3,11 @@ calculation:
 statement:
      declaration
      expression
-     variable_name "=" expression
+     name "=" expression
 
 declaration:
-    let variable_name "=" expression
+    let name "=" expression
+    const name "=" expression
 
 expression:
     term

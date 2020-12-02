@@ -52,11 +52,12 @@ constexpr char print = ';';
 constexpr char number = '8';
 constexpr char name = 'n';
 constexpr char let = 'L';
-constexpr char assign = '='; // char for assignment of variable
+constexpr char constant = 'C';
 
 const string prompt = "> ";
 const string result = "= ";
 const string declkey = "let";
+const string constkey = "const";
 
 
 Token Token_stream::get ()
@@ -105,6 +106,7 @@ Token Token_stream::get ()
                 cin.putback(ch);
 
                 if (s == declkey) return Token{ let };
+                if (s == constkey) return Token{ constant };
 
                 return Token{ name, s };
             }
@@ -132,9 +134,10 @@ struct Variable
 {
     string name;
     double value;
+    bool is_constant;
 
-    Variable (string n, double v)
-            : name{ n }, value{ v }
+    Variable (string n, double v, bool is_const = false)
+            : name{ n }, value{ v }, is_constant{ is_const }
     { }
 };
 
@@ -153,10 +156,14 @@ double set_value (string s, double d)
 {
     for (int i = 0; i <= var_table.size(); ++i)
     {
-        if (var_table[i].name == s)
+        if (var_table[i].name == s && !var_table[i].is_constant)
         {
             var_table[i].value = d;
             return d;
+        }
+        else
+        {
+            error("set: unable to change constant ", s);
         }
     }
 
@@ -170,12 +177,12 @@ bool is_declared (string s)
     return false;
 }
 
-double define_name (string var, double val)
+double define_name (string var, double val, bool is_const)
 {
     if (is_declared(var))
         error(var, "define_name: declared twice");
 
-    var_table.push_back (Variable{ var, val });
+    var_table.push_back (Variable{ var, val, is_const});
 
     return val;
 }
@@ -270,7 +277,7 @@ double expression ()
 }
 
 
-double declaration ()
+double declaration (bool is_const)
 {
     Token t = ts.get();
     if (t.kind != name)
@@ -284,7 +291,7 @@ double declaration ()
     if (t.kind != '=')
         error("'=' missing in declaration of ", var);
 
-    return define_name (var, expression());
+    return define_name (var, expression(), is_const);
 }
 
 
@@ -294,7 +301,9 @@ double statement ()
     switch (t.kind)
     {
         case let:
-            return declaration();
+            return declaration(false);
+        case constant:
+            return declaration(true);
         case name:
         {
             Token tt = ts.get();
@@ -341,8 +350,8 @@ void calculate ()
 int main ()
 try
 {
-    define_name ("pi", 3.141592653589793);
-    define_name ("e",  2.718281828459045);
+    define_name ("pi", 3.141592653589793, true);
+    define_name ("e",  2.718281828459045, true);
 
     calculate();
 }
