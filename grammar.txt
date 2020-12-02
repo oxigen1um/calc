@@ -1,0 +1,26 @@
+calculation:
+    statement
+statement:
+     declaration
+     expression
+     variable_name "=" expression
+
+declaration:
+    let variable_name "=" expression
+
+expression:
+    term
+    expression "+" term
+    expression "-" term
+
+term:
+    elementary_expression
+    term "*" elementary_expression
+    term "/" elementary_expression
+    term "%" elementary_expression
+
+elementary_expression:
+    digit
+    "(" expression ")"
+digit:
+    floating_point_literal
