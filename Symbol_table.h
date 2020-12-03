@@ -7,7 +7,7 @@
 class Symbol_table {
 public:
 
-    double get(string s);
+    double get(string s) const;
     double set(string s, double d);
     bool is_declared(string s);
     double define(string var, double val, bool is_const);

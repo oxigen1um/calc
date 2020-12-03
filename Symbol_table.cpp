@@ -1,6 +1,6 @@
 #include "Symbol_table.h"
 
-double Symbol_table::get(string s) {
+double Symbol_table::get(string s) const {
     for (int i = 0; i < var_table.size(); ++i)
         if (var_table[i].name == s)
             return var_table[i].value;

@@ -5,6 +5,7 @@
 
 using namespace std;
 
+
 void Token_stream::putback (Token t)
 {
     if (full)
@@ -22,12 +23,16 @@ Token Token_stream::get ()
         return buffer;
     }
 
-    char ch;
-    cin >> ch;
+    char ch = cin.get(); // get sole symbol including spaces. cin by the default skips spaces
+
+    while (isspace(ch))
+    {
+        if (ch == '\n') return Token { print };
+        ch = cin.get();
+    }
 
     switch (ch)
     {
-        case quit:
         case print:
         case '(':
         case ')':
@@ -61,6 +66,8 @@ Token Token_stream::get ()
 
                 if (s == declkey) return Token{ let };
                 if (s == constkey) return Token{ constant };
+                if (s == helpkey) return Token { help };
+                if (s == quitkey) return Token { quit };
 
                 return Token{ name, s };
             }

@@ -7,6 +7,15 @@
 
 using namespace std;
 
+void print_help()
+{
+    cout << "CLI Calculator\n\n"
+    << "Available commands:\n"
+    << "1) 'quit' - exit program\n"
+    << "2) 'help' - print manual\n"
+    << "3) put ';' or '\\n' at the end of statement to calculate it\n";
+}
+
 Symbol_table variables;
 
 Token_stream ts;
@@ -157,8 +166,13 @@ void calculate ()
                 t = ts.get();
             if (t.kind == quit) return;
 
-            ts.putback(t);
-            cout << result << statement() << endl;
+            if (t.kind == help)
+                print_help();
+            else
+            {
+                ts.putback(t);
+                cout << result << statement() << endl;
+            }
         }
         catch (runtime_error& e)
         {
