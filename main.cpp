@@ -1,192 +1,13 @@
 #include "std_lib_facilities.h"
+#include "Token.h"
+#include "Token_stream.h"
+#include "Variable.h"
+#include "Symbol_table.h"
+#include "constants.h"
 
 using namespace std;
 
-struct Token
-{
-    char kind;
-    double value;
-    string name;
-
-    Token (char ch)
-            : kind{ ch }, value{ 0 }
-    { }
-
-    Token (char ch, double val)
-            : kind{ ch }, value{ val }
-    { }
-
-    Token (char ch, string s)
-        : kind{ ch }, name{ s }
-    { }
-};
-
-
-class Token_stream
-{
-    bool full{ false };
-    Token buffer{ '\0' };
-
-public:
-    Token_stream () { }
-
-    Token get ();
-    void putback (Token t);
-
-    void ignore (char); // ignore input up to the defined symbol
-};
-
-
-void Token_stream::putback (Token t)
-{
-    if (full)
-        error("putback() into a full buffer");
-
-    buffer = t;
-    full = true;
-}
-
-
-constexpr char quit = 'q';
-constexpr char print = ';';
-constexpr char number = '8';
-constexpr char name = 'n';
-constexpr char let = 'L';
-constexpr char constant = 'C';
-
-const string prompt = "> ";
-const string result = "= ";
-const string declkey = "let";
-const string constkey = "const";
-
-
-Token Token_stream::get ()
-{
-    if (full)
-    {
-        full = false;
-        return buffer;
-    }
-
-    char ch;
-    cin >> ch;
-
-    switch (ch)
-    {
-        case quit:
-        case print:
-        case '(':
-        case ')':
-        case '+':
-        case '-':
-        case '*':
-        case '/':
-        case '%':
-        case '=':
-            return Token{ ch };
-
-        case '.':
-        case '0': case '1': case '2': case '3': case '4':
-        case '5': case '6': case '7': case '8': case '9':
-        {
-            cin.putback(ch);
-            double val;
-            cin >> val;
-            return Token{ number, val };
-        }
-
-        default:
-            if (isalpha(ch))
-            {
-                string s;
-                s += ch;
-                while (cin.get(ch) &&
-                       (isalpha(ch) || isdigit(ch) || ch == '_'))
-                    s += ch;
-                cin.putback(ch);
-
-                if (s == declkey) return Token{ let };
-                if (s == constkey) return Token{ constant };
-
-                return Token{ name, s };
-            }
-            error("Bad token");
-    }
-}
-
-
-void Token_stream::ignore (char c)
-{
-    if (full && c == buffer.kind)
-    {
-        full = false;
-        return;
-    }
-    full = false;
-
-    char ch;
-    while (cin >> ch)
-        if (ch == c) return;
-}
-
-
-struct Variable
-{
-    string name;
-    double value;
-    bool is_constant;
-
-    Variable (string n, double v, bool is_const = false)
-            : name{ n }, value{ v }, is_constant{ is_const }
-    { }
-};
-
-vector<Variable> var_table;
-
-double get_value (string s)
-{
-    for (int i = 0; i < var_table.size(); ++i)
-        if (var_table[i].name == s)
-            return var_table[i].value;
-
-    error("get: undefined name ", s);
-}
-
-double set_value (string s, double d)
-{
-    for (int i = 0; i <= var_table.size(); ++i)
-    {
-        if (var_table[i].name == s && !var_table[i].is_constant)
-        {
-            var_table[i].value = d;
-            return d;
-        }
-        else
-        {
-            error("set: unable to change constant ", s);
-        }
-    }
-
-    error("set: undefined name ", s);
-}
-
-bool is_declared (string s)
-{
-    for (int i = 0; i < var_table.size(); ++i)
-        if (var_table[i].name == s) return true;
-    return false;
-}
-
-double define_name (string var, double val, bool is_const)
-{
-    if (is_declared(var))
-        error(var, "define_name: declared twice");
-
-    var_table.push_back (Variable{ var, val, is_const});
-
-    return val;
-}
-
+Symbol_table variables;
 
 Token_stream ts;
 
@@ -215,7 +36,7 @@ double primary ()
             return t.value;
 
         case name:
-            return get_value(t.name);
+            return variables.get(t.name);
 
         default:
             error("primary expected");
@@ -284,14 +105,14 @@ double declaration (bool is_const)
         error("name expected in declaration");
 
     string var = t.name;
-    if (is_declared(var))
+    if (variables.is_declared(var))
         error(var, " declared twice");
 
     t = ts.get();
     if (t.kind != '=')
         error("'=' missing in declaration of ", var);
 
-    return define_name (var, expression(), is_const);
+    return variables.define (var, expression(), is_const);
 }
 
 
@@ -310,7 +131,7 @@ double statement ()
             if (tt.kind != '=')
                 cin.putback(tt.kind);
             else if (tt.kind == '=')
-                return set_value(t.name, expression());
+                return variables.set(t.name, expression());
         }
         default:
             ts.putback(t);
@@ -350,8 +171,8 @@ void calculate ()
 int main ()
 try
 {
-    define_name ("pi", 3.141592653589793, true);
-    define_name ("e",  2.718281828459045, true);
+    variables.define ("pi", 3.141592653589793, true);
+    variables.define ("e",  2.718281828459045, true);
 
     calculate();
 }
