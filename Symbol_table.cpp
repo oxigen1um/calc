@@ -42,3 +42,8 @@ double Symbol_table::define (string var, double val, bool is_const)
 
     return val;
 }
+
+vector<Variable> Symbol_table::get_variables() const
+{
+    return var_table;
+}

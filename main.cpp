@@ -7,18 +7,31 @@
 
 using namespace std;
 
+Symbol_table variables;
+Token_stream ts;
+
 void print_help()
 {
+    vector<Variable> v = variables.get_variables();
+
     cout << "CLI Calculator\n\n"
     << "Available commands:\n"
     << "1) 'quit' - exit program\n"
     << "2) 'help' - print manual\n"
-    << "3) put ';' or '\\n' at the end of statement to calculate it\n";
+    << "3) use 'let' and 'const' to define variable or constant respectively\n"
+    << "4) put ';' or '\\n' at the end of statement to calculate it\n\n"
+    << "Table of variables and constants:\n"
+    << "Name | Type | Value\n"
+    << "___________________\n";
+    for (Variable x : v)
+    {
+        string type = (x.is_constant) ? "constant" : "variable";
+        cout << x.name << " | " << type << " | " << x.value <<  '\n';
+        cout << "-------------------\n";
+    }
+
 }
 
-Symbol_table variables;
-
-Token_stream ts;
 
 double expression (); // function declaration in order to use it before it's definition
 
@@ -136,11 +149,10 @@ double statement ()
             return declaration(true);
         case name:
         {
-            Token tt = ts.get();
-            if (tt.kind != '=')
-                cin.putback(tt.kind);
-            else if (tt.kind == '=')
+            Token tt = ts.get(); // get next symbol and check it
+            if (tt.kind == '=')
                 return variables.set(t.name, expression());
+            cin.putback(tt.kind);
         }
         default:
             ts.putback(t);
@@ -157,7 +169,7 @@ void clean_up_mess ()
 
 void calculate ()
 {
-    while (true)
+    while (cin)
         try
         {
             cout << prompt;
@@ -173,6 +185,8 @@ void calculate ()
                 ts.putback(t);
                 cout << result << statement() << endl;
             }
+
+            if (cin.eof()) return; // if end of file -> stop reading data
         }
         catch (runtime_error& e)
         {

@@ -11,6 +11,7 @@ public:
     double set(string s, double d);
     bool is_declared(string s);
     double define(string var, double val, bool is_const);
+    vector<Variable> get_variables() const;
 
 private:
     vector<Variable> var_table;

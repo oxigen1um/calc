@@ -1,5 +1,10 @@
 calculation:
+    print
+    quit
+    help
     statement
+    calculation statement
+
 statement:
      declaration
      expression
