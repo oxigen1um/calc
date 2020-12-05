@@ -49,9 +49,13 @@ Token Token_stream::get ()
         {
             if (ch == '.') // handle case when only '.' entered
             {
-                char next_digit = cin.get();
-                if (!isdigit(next_digit)) error("Bad token");
-                cin.putback(next_digit); // put symbol back if it's digit
+                char next_symbol = cin.get();
+                if (!isdigit(next_symbol))
+                {
+                    cin.putback(next_symbol); // e.g. if symbol was ';' and if don't put it back => ts.ignore works bad
+                    error("Bad token");
+                }
+                cin.putback(next_symbol); // putting digit back for further reading!!!
             }
 
             cin.putback(ch);
@@ -90,7 +94,7 @@ void Token_stream::ignore (char a, char b)
     full = false;
 
     char ch;
-    while (ch = cin.get())
+    while ((ch = cin.get()))
         if (ch == a || ch == b) return;
 }
 

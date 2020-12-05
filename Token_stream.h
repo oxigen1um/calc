@@ -15,7 +15,6 @@ public:
     void putback (Token t);
 
     void ignore (char a, char b); // ignore input up to the defined symbol
-    void ignore (char);
 };
 
 #endif //CALCULATOR_TOKEN_STREAM_H
