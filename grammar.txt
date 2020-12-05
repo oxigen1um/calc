@@ -3,7 +3,16 @@ calculation:
     quit
     help
     statement
-    calculation statement
+
+print
+    ";"
+    "\n"
+
+quit
+    "quit"
+
+help
+    "help"
 
 statement:
      declaration

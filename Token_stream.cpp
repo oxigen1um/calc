@@ -5,7 +5,6 @@
 
 using namespace std;
 
-
 void Token_stream::putback (Token t)
 {
     if (full)
@@ -28,7 +27,7 @@ Token Token_stream::get ()
     while (isspace(ch))
     {
         if (ch == '\n') return Token { print };
-        ch = cin.get();
+        ch = cin.get(); // skip the rest space symbols
     }
 
     switch (ch)
@@ -48,6 +47,13 @@ Token Token_stream::get ()
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
         {
+            if (ch == '.') // handle case when only '.' entered
+            {
+                char next_digit = cin.get();
+                if (!isdigit(next_digit)) error("Bad token");
+                cin.putback(next_digit); // put symbol back if it's digit
+            }
+
             cin.putback(ch);
             double val;
             cin >> val;
@@ -74,9 +80,9 @@ Token Token_stream::get ()
     }
 }
 
-void Token_stream::ignore (char c)
+void Token_stream::ignore (char a, char b)
 {
-    if (full && c == buffer.kind)
+    if (full && (a == buffer.kind || b == buffer.kind))
     {
         full = false;
         return;
@@ -84,6 +90,7 @@ void Token_stream::ignore (char c)
     full = false;
 
     char ch;
-    while (cin >> ch)
-        if (ch == c) return;
+    while (ch = cin.get())
+        if (ch == a || ch == b) return;
 }
+

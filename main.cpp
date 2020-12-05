@@ -7,6 +7,8 @@
 
 using namespace std;
 
+ostream& syncerr = *cerr.tie(); // synchronize cerr with cout and save it as link for further purposes
+
 Symbol_table variables;
 Token_stream ts;
 
@@ -22,12 +24,12 @@ void print_help()
     << "4) put ';' or '\\n' at the end of statement to calculate it\n\n"
     << "Table of variables and constants:\n"
     << "Name | Type | Value\n"
-    << "___________________\n";
-    for (Variable x : v)
+    << "______________________________________\n";
+    for (const Variable& x : v)
     {
         string type = (x.is_constant) ? "constant" : "variable";
-        cout << x.name << " | " << type << " | " << x.value <<  '\n';
-        cout << "-------------------\n";
+        cout << setw(5) << x.name << " | " << setw(5) <<  type << " | " << setw(5) << x.value <<  '\n';
+        cout << "--------------------------------------\n";
     }
 
 }
@@ -82,10 +84,20 @@ double term ()
             case '/':
             {
                 double d = primary();
-                if (d == 0) error("divide by zero");
+                if (d == 0) error("/: divide by zero");
                 left /= d;
                 break;
             }
+
+            case '%': // get the rest of division
+            {
+                double d = primary();
+                if (d == 0) error("%: divide by zero");
+                left = fmod(left, d);
+                t = ts.get();
+                break;
+            }
+
 
             default:
                 ts.putback(t);
@@ -150,6 +162,7 @@ double statement ()
         case name:
         {
             Token tt = ts.get(); // get next symbol and check it
+
             if (tt.kind == '=')
                 return variables.set(t.name, expression());
             cin.putback(tt.kind);
@@ -163,19 +176,20 @@ double statement ()
 
 void clean_up_mess ()
 {
-    ts.ignore (print);
+    ts.ignore (print, '\n');
 }
 
 
 void calculate ()
 {
     while (cin)
-        try
-        {
+        try {
             cout << prompt;
             Token t = ts.get();
+
             while (t.kind == print) // 'eat' all ';' symbols
                 t = ts.get();
+
             if (t.kind == quit) return;
 
             if (t.kind == help)
@@ -183,34 +197,37 @@ void calculate ()
             else
             {
                 ts.putback(t);
-                cout << result << statement() << endl;
+                double value = statement();
+                cout << result << value << endl;
             }
 
-            if (cin.eof()) return; // if end of file -> stop reading data
         }
-        catch (runtime_error& e)
+        catch (exception& e)
         {
-            cerr << e.what() << endl;
+            syncerr << e.what() << endl;
             clean_up_mess();
         }
 }
 
 
 int main ()
-try
 {
-    variables.define ("pi", 3.141592653589793, true);
-    variables.define ("e",  2.718281828459045, true);
+    try
+    {
+        variables.define ("pi", 3.141592653589793, true);
+        variables.define ("e",  2.718281828459045, true);
 
-    calculate();
+        calculate();
+    }
+    catch (exception& e)
+    {
+        cerr << "exception: " << e.what() << endl;
+        return 1;
+    }
+    catch (...)
+    {
+        cerr << "Oops, unknown exception" << endl;
+        return 2;
+    }
 }
-catch (exception& e)
-{
-    cerr << "exception: " << e.what() << endl;
-    return 1;
-}
-catch (...)
-{
-    cerr << "Oops, unknown exception" << endl;
-    return 2;
-}
+
